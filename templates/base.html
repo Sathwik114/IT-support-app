@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAN Chat System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-k6RqeWeci5ZR/Lv4MR0sA0FfDOMTLCtXFQ28S/TnH7hJ7owjZf0GoMZb4M4G6R5WmFt1YFszJFLG3Oq9l+6A3A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-brand">
+            <h2>💬 IT Support</h2>
+        </div>
+        <div class="navbar-menu">
+            <div class="user-info">
+                <span id="currentUserName">{{ user.username|default:"Guest" }}</span>
+            </div>
+            <div class="dropdown">
+                <button type="button" class="dropdown-btn" onclick="toggleDropdown()">
+                    <i class="fa fa-user"></i> {{ user.username|default:"Guest" }} <i class="fa fa-chevron-down"></i>
+                </button>
+                <div id="userDropdown" class="dropdown-content">
+                    {% if user.is_authenticated %}
+                        {% if user.username == 's20330' or user.username == '250479' or user.username == '230022' or user.username == '140287' or user.username == '111075' or user.username == 'ithelpdesk' %}
+                            <a href="/it-reports/" class="dropdown-item">
+                                <i class="fa fa-chart-bar"></i> IT Reports
+                            </a>
+                        {% endif %}
+                        <a href="#" onclick="showChangePasswordModal()" class="dropdown-item">
+                            <i class="fa fa-key"></i> Change Password
+                        </a>
+                        <a href="{% url 'logout' %}" class="dropdown-item">
+                            <i class="fa fa-sign-out-alt"></i> Logout
+                        </a>
+                    {% else %}
+                        <!-- Guest Menu -->
+                        <a href="{% url 'login' %}" class="dropdown-item">
+                            <i class="fa fa-sign-in-alt"></i> Login
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <script src="/static/js/app.js"></script>
+    
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Change Password</h3>
+                <button type="button" class="close-button" onclick="closeChangePasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm" onsubmit="changePassword(event)">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password:</label>
+                        <input type="password" id="currentPassword" name="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password:</label>
+                        <input type="password" id="newPassword" name="newPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password:</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Change Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <style>
+.navbar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar-brand h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s;
+}
+
+.dropdown-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    min-width: 200px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    z-index: 1001;
+    display: none;
+}
+
+.dropdown-content.show {
+    display: block;
+}
+
+.dropdown-item {
+    display: block;
+    padding: 12px 16px;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #007bff;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-submit:hover {
+    background: #0056b3;
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        padding: 8px 10px;
+    }
+    
+    .dropdown-content {
+        right: -10px;
+        min-width: 180px;
+    }
+}
+</style>
+
+<script>
+function toggleDropdown() {
+    const dropdown = document.getElementById('userDropdown');
+    if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+    } else {
+        dropdown.classList.add('show');
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('userDropdown');
+    const dropdownBtn = document.querySelector('.dropdown-btn');
+    
+    if (!dropdown.contains(event.target) && !dropdownBtn.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+
+function showChangePasswordModal() {
+    document.getElementById('changePasswordModal').style.display = 'flex';
+}
+
+function closeChangePasswordModal() {
+    document.getElementById('changePasswordModal').style.display = 'none';
+    document.getElementById('changePasswordForm').reset();
+}
+
+function changePassword(event) {
+    event.preventDefault();
+
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        alert('Please fill in all password fields.');
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        alert('New passwords do not match!');
+        return;
+    }
+
+    fetch('/api/auth/change-password/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword,
+            confirm_password: confirmPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Password changed successfully.');
+            closeChangePasswordModal();
+        } else {
+            alert(data.error || 'Unable to change password.');
+        }
+    })
+    .catch(() => {
+        alert('Unable to reach the server. Please try again later.');
+    });
+}
+</script>
+
+</body>
+</html>

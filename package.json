@@ -1,0 +1,12 @@
+{
+  "name": "chat-app",
+  "version": "1.0.0",
+  "description": "Chat application",
+  "scripts": {
+    "start": "npm --prefix electron-app start",
+    "start:server": "python manage.py runserver"
+  },
+  "keywords": ["chat", "django"],
+  "author": "Chat Developer",
+  "license": "MIT"
+}

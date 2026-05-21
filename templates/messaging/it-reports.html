@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Reports - LAN Chat System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js" onerror="this.onerror=null; this.src='https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js';"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #00d4ff;
+            --primary-dark: #0099cc;
+            --secondary: #0088bb;
+            --success: #00ff88;
+            --warning: #ffaa00;
+            --danger: #ff3366;
+            --info: #00ccff;
+            --light: #1a2332;
+            --dark: #f0f4f8;
+            --border: #2a3f5f;
+            --shadow: 0 8px 32px rgba(0, 20, 40, 0.3);
+            --shadow-lg: 0 16px 64px rgba(0, 20, 40, 0.4);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f1823 0%, #1a2f4a 50%, #0d1f35 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--dark);
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 136, 187, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        /* Main Container */
+        .container {
+            width: 100vw;
+            max-width: none;
+            margin: 0;
+            padding: 15px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Header Section */
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .header-content {
+            flex: 1;
+        }
+        
+        .header-content h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .header-content p {
+            color: rgba(240, 244, 248, 0.8);
+            font-size: 1.1rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            color: #0f1823;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+        
+        .btn-danger {
+            background: rgba(255, 51, 102, 0.2);
+            color: #ff3366;
+            border: 2px solid #ff3366;
+        }
+        
+        .btn-danger:hover {
+            background: rgba(255, 51, 102, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(255, 51, 102, 0.3);
+        }
+        
+        /* Search & Filter Section */
+        .search-filter-container {
+            background: linear-gradient(135deg, rgba(26, 47, 74, 0.8) 0%, rgba(13, 31, 53, 0.8) 100%);
+            border-radius: 15px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow), inset 0 1px 1px rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            backdrop-filter: blur(10px);
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        .search-bar-wrapper {
+            position: relative;
+            margin-bottom: 0;
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .search-bar {
+            width: 100%;
+            padding: 14px 20px 14px 45px;
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: rgba(15, 24, 35, 0.6);
+            color: var(--dark);
+        }
+        
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(15, 24, 35, 0.9);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        }
+        
+        .search-bar::placeholder {
+            color: rgba(240, 244, 248, 0.5);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(0, 212, 255, 0.6);
+            pointer-events: none;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            flex: 0 1 auto;
+            min-width: 180px;
+        }
+        
+        .filter-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-select {
+            padding: 10px 15px;
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            font-size: 14px;
+            background: rgba(15, 24, 35, 0.6);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--dark);
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(15, 24, 35, 0.9);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+        
+        /* Content Wrapper */
+        .content-wrapper {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 200px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 136, 187, 0.1) 100%);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            height: fit-content;
+        }
+        
+        .table-wrapper {
+            flex: 1;
+        }
+        
+        .stat-item {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 136, 187, 0.1) 100%);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(240, 244, 248, 0.7);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        
+        /* Table Container */
+        .table-wrapper {
+            background: linear-gradient(135deg, rgba(26, 47, 74, 0.9) 0%, rgba(13, 31, 53, 0.9) 100%);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .table-scroll {
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            flex: 1;
+        }
+        
+        .table-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .table-scroll::-webkit-scrollbar-track {
+            background: rgba(26, 47, 74, 0.3);
+            border-radius: 4px;
+        }
+        
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+        
+        .table-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+        
+        .reports-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+        
+        .reports-table thead {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 136, 187, 0.2) 100%);
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+        }
+        
+        .reports-table th {
+            color: var(--primary);
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+        }
+        
+        .reports-table tbody tr {
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .reports-table tbody tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+            border-left: 3px solid var(--primary);
+        }
+        
+        .reports-table td {
+            padding: 12px 8px;
+            font-size: 12px;
+            color: var(--dark);
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            vertical-align: top;
+        }
+
+        .reports-table th:nth-child(1),
+        .reports-table td:nth-child(1) {
+            width: 6%;
+        }
+
+        .reports-table th:nth-child(2),
+        .reports-table td:nth-child(2) {
+            width: 10%;
+        }
+
+        .reports-table th:nth-child(3),
+        .reports-table td:nth-child(3),
+        .reports-table th:nth-child(7),
+        .reports-table td:nth-child(7) {
+            width: 12%;
+        }
+
+        .reports-table th:nth-child(4),
+        .reports-table td:nth-child(4),
+        .reports-table th:nth-child(5),
+        .reports-table td:nth-child(5) {
+            width: 8%;
+        }
+
+        .reports-table th:nth-child(6),
+        .reports-table td:nth-child(6) {
+            width: 16%;
+        }
+
+        .reports-table th:nth-child(8),
+        .reports-table td:nth-child(8) {
+            width: 15%;
+        }
+
+        .reports-table th:nth-child(10),
+        .reports-table td:nth-child(10) {
+            width: 8%;
+        }
+
+        .reports-table th:nth-child(11),
+        .reports-table td:nth-child(11) {
+            width: 8%;
+        }
+
+        .reports-table th:nth-child(9),
+        .reports-table td:nth-child(9) {
+            width: 9%;
+        }
+
+        .scroll-cell {
+            max-height: 84px;
+            min-height: 42px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.14);
+            border-radius: 6px;
+            background: rgba(13, 31, 53, 0.35);
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        .scroll-cell::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scroll-cell::-webkit-scrollbar-track {
+            background: rgba(26, 47, 74, 0.35);
+            border-radius: 4px;
+        }
+
+        .scroll-cell::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.75);
+            border-radius: 4px;
+        }
+        
+        /* Status Badge */
+        .status {
+            display: inline-block;
+            padding: 5px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: normal;
+            text-align: center;
+            overflow-wrap: anywhere;
+        }
+        
+        .status.pending {
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.2), rgba(255, 200, 87, 0.2));
+            color: #ffaa00;
+            border: 1px solid rgba(255, 170, 0, 0.4);
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.2);
+        }
+        
+        .status.took_over {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 136, 187, 0.2));
+            color: var(--primary);
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+        
+        .status.completed {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 200, 136, 0.2));
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+        
+        /* Action Buttons */
+        .action-cell {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 7px 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            white-space: normal;
+            line-height: 1.2;
+        }
+        
+        .action-btn.take-over {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 136, 187, 0.2));
+            color: var(--primary);
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+        
+        .action-btn.take-over:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(0, 136, 187, 0.3));
+        }
+        
+        .action-btn.complete {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 200, 136, 0.2));
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+        
+        .action-btn.complete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.4);
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.3), rgba(0, 200, 136, 0.3));
+        }
+
+        .fixed-problem-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0, 12, 24, 0.72);
+            backdrop-filter: blur(6px);
+        }
+
+        .fixed-problem-dialog {
+            width: min(520px, 100%);
+            background: linear-gradient(135deg, rgba(26, 47, 74, 0.98), rgba(13, 31, 53, 0.98));
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .fixed-problem-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.16);
+        }
+
+        .fixed-problem-header h3 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 18px;
+            line-height: 1.2;
+        }
+
+        .fixed-problem-close {
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--dark);
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .fixed-problem-body {
+            padding: 18px;
+        }
+
+        .fixed-problem-body label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(240, 244, 248, 0.86);
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .fixed-problem-body textarea {
+            width: 100%;
+            min-height: 130px;
+            resize: vertical;
+            border: 1px solid rgba(0, 212, 255, 0.28);
+            border-radius: 8px;
+            padding: 12px;
+            background: rgba(7, 19, 32, 0.78);
+            color: var(--dark);
+            outline: none;
+            font: inherit;
+            line-height: 1.4;
+        }
+
+        .fixed-problem-error {
+            display: none;
+            margin-top: 8px;
+            color: var(--danger);
+            font-size: 13px;
+        }
+
+        .fixed-problem-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 14px 18px 18px;
+        }
+        
+        /* User Info */
+        .user-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(0, 204, 255, 0.2), rgba(0, 136, 187, 0.2));
+            color: var(--primary);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .container-id {
+            font-weight: 800;
+            color: var(--primary);
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 136, 187, 0.2));
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: inline-block;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+        
+        .date-time {
+            font-size: 12px;
+            color: rgba(240, 244, 248, 0.8);
+            white-space: normal;
+        }
+        
+        /* No Data */
+        .no-data {
+            text-align: center;
+            padding: 80px 40px;
+            color: rgba(240, 244, 248, 0.6);
+        }
+        
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.4;
+            color: var(--primary);
+        }
+        
+        .no-data p {
+            font-size: 16px;
+            font-weight: 500;
+            color: rgba(240, 244, 248, 0.7);
+        }
+        
+        /* Loading */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 212, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .filter-group {
+                flex-wrap: wrap;
+            }
+            
+            .filter-item {
+                min-width: 150px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-section {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+            
+            .header-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+            
+            .header-content h1 {
+                font-size: 2rem;
+            }
+            
+            .filter-group {
+                flex-direction: column;
+            }
+            
+            .filter-item {
+                width: 100%;
+                min-width: unset;
+            }
+            
+            .action-cell {
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+            }
+        }
+
+        .date-input-wrap {
+            position: relative;
+            width: 100%;
+        }
+
+        .date-input-wrap .date-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8696a0;
+            cursor: pointer;
+            z-index: 2;
+            pointer-events: auto;
+        }
+
+        .date-input-wrap .date-input {
+            padding-left: 34px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-section">
+            <div class="header-content">
+                <h1><i class="fas fa-headset"></i> IT Reports</h1>
+                <p>Help Desk Request Management System</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="exportToExcel()">
+                    <i class="fas fa-download"></i> Export Excel
+                </button>
+            </div>
+        </div>
+        
+        <!-- Search & Filter -->
+        <div class="search-filter-container">
+            <div class="search-bar-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input 
+                    type="text" 
+                    class="search-bar" 
+                    id="globalSearch" 
+                    placeholder="Search by Task ID, User, Department, Section, Problem, Fixed Problem..."
+                    onkeyup="filterTable()"
+                >
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-item">
+                    <label class="filter-label">Filter by Status</label>
+                    <select class="filter-select" id="statusFilter" onchange="filterTable()">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="resolved">Resolved</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Took by</label>
+                    <select class="filter-select" id="takenByFilter" onchange="filterTable()">
+                        <option value="">All Technicians</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">From Date</label>
+                    <div class="date-input-wrap">
+                        <i class="fas fa-calendar-alt date-icon" onclick="openDatePicker('fromDate')"></i>
+                        <input class="filter-select date-input" id="fromDate" type="date" onchange="filterTable()">
+                    </div>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">To Date</label>
+                    <div class="date-input-wrap">
+                        <i class="fas fa-calendar-alt date-icon" onclick="openDatePicker('toDate')"></i>
+                        <input class="filter-select date-input" id="toDate" type="date" onchange="filterTable()">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats and Table Container -->
+        <div class="content-wrapper">
+            <!-- Stats -->
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-item">
+                    <div class="stat-label">Total Requests</div>
+                    <div class="stat-value" id="totalStat">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Pending</div>
+                    <div class="stat-value" id="pendingStat">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">In Progress</div>
+                    <div class="stat-value" id="inProgressStat">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Completed</div>
+                    <div class="stat-value" id="completedStat">0</div>
+                </div>
+            </div>
+            
+            <!-- Table -->
+            <div class="table-wrapper">
+                <div class="table-scroll">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>Task ID</th>
+                                <th>Date & Time</th>
+                                <th>From User</th>
+                                <th>Department</th>
+                                <th>Section</th>
+                                <th>Problem Description</th>
+                                <th>Took by</th>
+                                <th>Fixed Problem</th>
+                                <th>Takeover Time</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody">
+                            <tr>
+                                <td colspan="11" style="text-align: center; padding: 40px;">
+                                    <div class="loading-spinner"></div>
+                                    <p style="margin-top: 15px; color: #999;">Loading requests...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed-problem-modal" id="fixedProblemModal">
+        <div class="fixed-problem-dialog">
+            <div class="fixed-problem-header">
+                <h3>Fixed Problem</h3>
+                <button class="fixed-problem-close" id="fixedProblemClose" type="button">&times;</button>
+            </div>
+            <div class="fixed-problem-body">
+                <label for="fixedProblemText">What did you fix?</label>
+                <textarea id="fixedProblemText" placeholder="Enter fixed problem details..."></textarea>
+                <div class="fixed-problem-error" id="fixedProblemError"></div>
+            </div>
+            <div class="fixed-problem-footer">
+                <button class="btn" id="fixedProblemCancel" type="button">Cancel</button>
+                <button class="btn btn-primary" id="fixedProblemSubmit" type="button">Submit</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Technician list
+        const technicians = [
+            '111075',
+            's20330',
+            '140287',
+            '250479',
+            '230022'
+        ];
+        
+        let allData = [];
+        
+        $(document).ready(function() {
+            loadContainers();
+        });
+        
+        function loadContainers() {
+            $.ajax({
+                url: '/api/messaging/helpdesk/containers/',
+                method: 'GET',
+                success: function(data) {
+                    allData = [];
+                    
+                    if (data.containers && data.containers.length > 0) {
+                        data.containers.forEach(function(container) {
+                            allData.push({
+                                type: 'container',
+                                ...container
+                            });
+                        });
+                    }
+                    
+                    $.ajax({
+                        url: '/api/messaging/helpdesk/requests/',
+                        method: 'GET',
+                        success: function(requestData) {
+                            if (requestData.requests && requestData.requests.length > 0) {
+                                requestData.requests.forEach(function(request) {
+                                    allData.push({
+                                        type: 'request',
+                                        ...request
+                                    });
+                                });
+                            }
+                            
+                            renderTable();
+                            populateFilters();
+                            updateStats();
+                        },
+                        error: function() {
+                            renderTable();
+                            populateFilters();
+                            updateStats();
+                        }
+                    });
+                },
+                error: function() {
+                    renderTable();
+                    populateFilters();
+                    updateStats();
+                }
+            });
+        }
+        
+        function renderTable(filteredData = null) {
+            const tbody = $('#reportsTableBody');
+            const data = filteredData || allData;
+            
+            if (data.length === 0) {
+                tbody.html(`
+                    <tr>
+                        <td colspan="11">
+                            <div class="no-data">
+                                <i class="fas fa-inbox"></i>
+                                <p>No requests found</p>
+                            </div>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+            
+            let html = '';
+            data.forEach(function(item) {
+                html += createTableRow(item);
+            });
+            tbody.html(html);
+        }
+        
+        function createTableRow(item) {
+            console.log('Creating table row for item:', item);
+            const createdDate = new Date(item.created_at || item.created).toLocaleString();
+            const requesterInfo = item.requester ? 
+                (item.requester.display_name || `${item.requester.username} | ${item.requester.full_name || 'No Name'}`) : 'Unknown';
+            const requesterDepartment = item.requester ? (item.requester.department || '-') : '-';
+            const requesterSection = item.requester ? (item.requester.section || '-') : '-';
+            const takenByInfo = item.taken_by ? 
+                (item.taken_by.display_name || `${item.taken_by.username} | ${item.taken_by.full_name || 'No Name'}`) : 'Not taken';
+            const containerId = item.container_id || item.id;
+            console.log('Task ID:', containerId, 'container_id field:', item.container_id);
+            const statusClass = item.status || 'pending';
+            const statusText = (item.status || 'pending').replace('_', ' ').toUpperCase();
+            const takeoverTime = item.taken_at ? new Date(item.taken_at).toLocaleString() : '-';
+            const description = item.problem_description || item.request_message || 'No description';
+            const fixedProblem = item.fixed_problem || '-';
+            
+            let actions = '';
+            if (item.status === 'pending') {
+                const actionId = item.type === 'request' ? item.id : item.container_id;
+                const fnName = item.type === 'request' ? 'takeOverRequest' : 'takeOverContainer';
+                actions = `<div class="action-cell"><button class="action-btn take-over" onclick="${fnName}(${actionId})">Take Over</button></div>`;
+            } else if (item.status === 'took_over') {
+                const actionId = item.container_id;
+                const fnName = 'completeContainer';
+                actions = `<div class="action-cell"><button class="action-btn complete" onclick="${fnName}(${actionId})">Complete</button></div>`;
+            } else {
+                actions = '<div class="action-cell">-</div>';
+            }
+            
+            return `
+                <tr>
+                    <td><span class="container-id">#${containerId}</span></td>
+                    <td><span class="date-time">${createdDate}</span></td>
+                    <td><span class="user-badge">${requesterInfo}</span></td>
+                    <td>${requesterDepartment}</td>
+                    <td>${requesterSection}</td>
+                    <td><div class="scroll-cell">${description}</div></td>
+                    <td><span class="user-badge">${takenByInfo}</span></td>
+                    <td><div class="scroll-cell">${fixedProblem}</div></td>
+                    <td><span class="date-time">${takeoverTime}</span></td>
+                    <td><span class="status ${statusClass}">${statusText}</span></td>
+                    <td>${actions}</td>
+                </tr>
+            `;
+        }
+        
+        function filterTable() {
+            const searchTerm = $('#globalSearch').val().toLowerCase();
+            const statusFilter = $('#statusFilter').val();
+            const takenByFilter = $('#takenByFilter').val();
+            const fromDate = $('#fromDate').val(); // YYYY-MM-DD
+            const toDate = $('#toDate').val();     // YYYY-MM-DD
+            
+            let filtered = allData.filter(function(item) {
+                const containerId = (item.container_id || item.id || '').toString().toLowerCase();
+                const requester = item.requester ? `${item.requester.username} ${item.requester.full_name || ''} ${item.requester.display_name || ''}`.toLowerCase() : '';
+                const department = item.requester ? (item.requester.department || '').toLowerCase() : '';
+                const section = item.requester ? (item.requester.section || '').toLowerCase() : '';
+                const problem = (item.problem_description || item.request_message || '').toLowerCase();
+                const fixedProblem = (item.fixed_problem || '').toLowerCase();
+                const status = item.status || 'pending';
+                const takenBy = item.taken_by ? item.taken_by.username : '';
+                const takenBySearch = item.taken_by ? `${item.taken_by.username} ${item.taken_by.full_name || ''} ${item.taken_by.display_name || ''}`.toLowerCase() : '';
+                const createdIso = item.created_at || item.created || '';
+                const createdDateOnly = createdIso ? new Date(createdIso).toISOString().slice(0, 10) : '';
+                
+                const matchSearch = !searchTerm || 
+                    containerId.includes(searchTerm) || 
+                    requester.includes(searchTerm) || 
+                    department.includes(searchTerm) ||
+                    section.includes(searchTerm) ||
+                    takenBySearch.includes(searchTerm) ||
+                    problem.includes(searchTerm) ||
+                    fixedProblem.includes(searchTerm);
+                
+                const matchStatus = !statusFilter ||
+                    (statusFilter === 'in_progress' && (status === 'took_over' || status === 'taken')) ||
+                    (statusFilter === 'completed' && (status === 'completed' || status === 'resolved')) ||
+                    status === statusFilter;
+                const matchTakenBy = !takenByFilter || takenBy === takenByFilter;
+                const matchFrom = !fromDate || (createdDateOnly && createdDateOnly >= fromDate);
+                const matchTo = !toDate || (createdDateOnly && createdDateOnly <= toDate);
+                
+                return matchSearch && matchStatus && matchTakenBy && matchFrom && matchTo;
+            });
+            
+            renderTable(filtered);
+            updateStats(filtered);
+        }
+        
+        function populateFilters() {
+            const takenBySet = new Set();
+            
+            allData.forEach(function(item) {
+                if (item.taken_by) {
+                    takenBySet.add(item.taken_by.username);
+                }
+            });
+            
+            // Use hardcoded technician list instead
+            let takenByHtml = '<option value="">All Technicians</option>';
+            technicians.forEach(function(tech) {
+                takenByHtml += `<option value="${tech}">${tech}</option>`;
+            });
+            $('#takenByFilter').html(takenByHtml);
+        }
+        
+        function updateStats(data = null) {
+            const stats = data || allData;
+            const total = stats.length;
+            const pending = stats.filter(s => (s.status || 'pending') === 'pending').length;
+            const inProgress = stats.filter(s => s.status === 'took_over' || s.status === 'taken').length;
+            const completed = stats.filter(s => s.status === 'completed' || s.status === 'resolved').length;
+            
+            $('#totalStat').text(total);
+            $('#pendingStat').text(pending);
+            $('#inProgressStat').text(inProgress);
+            $('#completedStat').text(completed);
+        }
+        
+        function takeOverContainer(containerId) {
+            console.log('Take over container called with ID:', containerId);
+            if (confirm('Take over this request?')) {
+                $.ajax({
+                    url: `/api/messaging/helpdesk/take-over/${containerId}/`,
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Request taken over!');
+                            loadContainers();
+                        } else {
+                            alert('Error: ' + (response.error || 'Failed'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Take over error:', xhr, status, error);
+                        alert('Error taking over request');
+                    }
+                });
+            }
+        }
+
+        function openDatePicker(inputId) {
+            const el = document.getElementById(inputId);
+            if (!el) return;
+            // Chromium supports showPicker(); fallback to focus+click.
+            if (typeof el.showPicker === 'function') {
+                el.showPicker();
+            } else {
+                el.focus();
+                el.click();
+            }
+        }
+
+        function askFixedProblem(onSubmit) {
+            const modal = document.getElementById('fixedProblemModal');
+            const textArea = document.getElementById('fixedProblemText');
+            const error = document.getElementById('fixedProblemError');
+            const closeBtn = document.getElementById('fixedProblemClose');
+            const cancelBtn = document.getElementById('fixedProblemCancel');
+            const submitBtn = document.getElementById('fixedProblemSubmit');
+
+            textArea.value = '';
+            error.textContent = '';
+            error.style.display = 'none';
+            modal.style.display = 'flex';
+            textArea.focus();
+
+            const closeModal = () => {
+                modal.style.display = 'none';
+            };
+
+            const submit = () => {
+                const fixedProblem = textArea.value.trim();
+                if (!fixedProblem) {
+                    error.textContent = 'Please enter what was fixed before completing this request.';
+                    error.style.display = 'block';
+                    textArea.focus();
+                    return;
+                }
+
+                closeModal();
+                onSubmit(fixedProblem);
+            };
+
+            closeBtn.onclick = closeModal;
+            cancelBtn.onclick = closeModal;
+            submitBtn.onclick = submit;
+            modal.onclick = (event) => {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            };
+        }
+        
+        function completeContainer(containerId) {
+            console.log('Complete container called with ID:', containerId);
+            askFixedProblem(function(fixedProblem) {
+                $.ajax({
+                    url: `/api/messaging/helpdesk/complete/${containerId}/`,
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify({ fixed_problem: fixedProblem }),
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Request completed!');
+                            loadContainers();
+                        } else {
+                            alert('Error: ' + (response.error || 'Failed'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Complete error:', xhr, status, error);
+                        alert('Error completing request');
+                    }
+                });
+            });
+        }
+        
+        function takeOverRequest(requestId) {
+            if (confirm('Take over this request?')) {
+                $.ajax({
+                    url: `/api/messaging/helpdesk/request/${requestId}/take/`,
+                    method: 'POST',
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Request taken over!');
+                            loadContainers();
+                        } else {
+                            alert('Error: ' + (response.error || 'Failed'));
+                        }
+                    },
+                    error: function() {
+                        alert('Error taking over request');
+                    }
+                });
+            }
+        }
+        
+        function completeRequest(requestId) {
+            if (confirm('Mark this request as completed?')) {
+                alert('Request marked as completed!');
+                loadContainers();
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function getExportRows() {
+            return allData.map(function(item) {
+                return {
+                    'Task ID': item.container_id || item.id || 'N/A',
+                    'Date & Time': item.created_at || item.created ? new Date(item.created_at || item.created).toLocaleString() : 'N/A',
+                    'From User': item.requester ? (item.requester.display_name || `${item.requester.username} | ${item.requester.full_name || 'No Name'}`) : 'Unknown',
+                    'Department': item.requester ? (item.requester.department || '') : '',
+                    'Section': item.requester ? (item.requester.section || '') : '',
+                    'Problem': item.problem_description || item.request_message || 'N/A',
+                    'Took by': item.taken_by ? (item.taken_by.display_name || `${item.taken_by.username} | ${item.taken_by.full_name || 'No Name'}`) : 'Not taken',
+                    'Fixed Problem': item.fixed_problem || '',
+                    'Takeover Time': item.taken_at ? new Date(item.taken_at).toLocaleString() : '-',
+                    'Status': (item.status || 'pending').replace('_', ' ').toUpperCase()
+                };
+            });
+        }
+
+        function escapeExcelHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function exportToExcelFallback(exportData, fileName) {
+            const columns = Object.keys(exportData[0]);
+            const headerHtml = columns.map(col => `<th>${escapeExcelHtml(col)}</th>`).join('');
+            const rowsHtml = exportData.map(row => `
+                <tr>
+                    ${columns.map(col => `<td>${escapeExcelHtml(row[col])}</td>`).join('')}
+                </tr>
+            `).join('');
+            const excelHtml = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office"
+                      xmlns:x="urn:schemas-microsoft-com:office:excel"
+                      xmlns="http://www.w3.org/TR/REC-html40">
+                    <head>
+                        <meta charset="UTF-8">
+                        <!--[if gte mso 9]>
+                        <xml>
+                            <x:ExcelWorkbook>
+                                <x:ExcelWorksheets>
+                                    <x:ExcelWorksheet>
+                                        <x:Name>IT Reports</x:Name>
+                                        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+                                    </x:ExcelWorksheet>
+                                </x:ExcelWorksheets>
+                            </x:ExcelWorkbook>
+                        </xml>
+                        <![endif]-->
+                    </head>
+                    <body>
+                        <table border="1">
+                            <thead><tr>${headerHtml}</tr></thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </body>
+                </html>
+            `;
+            const blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName.replace('.xlsx', '.xls');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+        
+        function exportToExcel() {
+            try {
+                console.log('Export function called, data length:', allData.length);
+                
+                if (!allData || allData.length === 0) {
+                    alert('No data to export');
+                    return;
+                }
+
+                const exportData = getExportRows();
+                const fileName = `IT_Reports_${new Date().toISOString().split('T')[0]}.xlsx`;
+                
+                console.log('Export data prepared:', exportData);
+
+                if (typeof XLSX === 'undefined') {
+                    console.warn('XLSX library not loaded; using built-in Excel HTML export fallback.');
+                    exportToExcelFallback(exportData, fileName);
+                    return;
+                }
+                
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'IT Reports');
+                
+                // Adjust column widths
+                ws['!cols'] = [
+                    { wch: 15 },
+                    { wch: 20 },
+                    { wch: 25 },
+                    { wch: 18 },
+                    { wch: 18 },
+                    { wch: 35 },
+                    { wch: 25 },
+                    { wch: 35 },
+                    { wch: 20 },
+                    { wch: 15 }
+                ];
+                
+                console.log('Writing file:', fileName);
+                
+                XLSX.writeFile(wb, fileName);
+                console.log('File written successfully');
+                
+            } catch (error) {
+                console.error('Error exporting to Excel:', error);
+                alert('Error exporting to Excel: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

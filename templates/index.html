@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Support</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="user-profile" id="userProfile">
+                    <img src="" alt="Profile" class="profile-pic" id="profilePic">
+                    <div class="user-info">
+                        <h3 id="userName">Loading...</h3>
+                        <p id="userStatus">Loading...</p>
+                    </div>
+                </div>
+                <div class="sidebar-actions user-menu" id="userMenu">
+                    <button class="icon-btn user-menu-btn" id="userMenuBtn" title="Account actions" aria-label="Account actions" aria-expanded="false">
+                        <i class="fas fa-ellipsis-vertical"></i>
+                    </button>
+                    <div class="user-menu-dropdown" id="userMenuDropdown" style="display: none;">
+                    <button type="button" class="user-menu-item it-menu-item" id="itReportsBtn" style="display: none;">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>IT Reports</span>
+                    </button>
+                    <button type="button" class="user-menu-item it-menu-item" id="itMaintainUsersBtn" style="display: none;">
+                        <i class="fas fa-user-gear"></i>
+                        <span>IT maintain users</span>
+                    </button>
+                    <button type="button" class="user-menu-item" id="newGroupBtn" style="display: none;">
+                        <i class="fas fa-users"></i>
+                        <span>New Group</span>
+                    </button>
+                    <button type="button" class="user-menu-item" id="changePasswordBtn">
+                        <i class="fas fa-key"></i>
+                        <span>Change Password</span>
+                    </button>
+                    <button type="button" class="user-menu-item" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search users, chats, messages...">
+                <i class="fas fa-search"></i>
+            </div>
+
+            <div class="conversations-list" id="conversationsList">
+                <!-- Conversations will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area" id="chatArea">
+            <div class="chat-placeholder" id="chatPlaceholder">
+                <i class="fas fa-comments"></i>
+                <h2>Select a conversation to start chatting</h2>
+                <p>Choose a user or group from the sidebar</p>
+            </div>
+
+            <div class="workspace-view" id="workspaceView" style="display: none;">
+                <div class="workspace-header">
+                    <div>
+                        <h2 id="workspaceTitle">Workspace</h2>
+                        <p id="workspaceSubtitle">Use this panel while chats remain available in the sidebar.</p>
+                    </div>
+                </div>
+                <div class="workspace-body">
+                    <iframe class="workspace-frame" id="itReportsFrame" title="IT Reports" style="display: none;"></iframe>
+
+                    <div class="workspace-panel" id="itMaintainUsersPage" style="display: none;">
+                        <div class="workspace-tools">
+                            <div class="form-group">
+                                <label>Select User</label>
+                                <input type="text" id="itMaintainUserSearch" placeholder="Search by username or name">
+                            </div>
+                            <div class="form-group" id="itMaintainHistorySearchGroup" style="display: none;">
+                                <label>Search History</label>
+                                <input type="text" id="itMaintainHistorySearch" placeholder="Search history table">
+                            </div>
+                            <div class="it-maintain-toolbar">
+                                <button type="button" class="btn-secondary" id="itMaintainUsersViewBtn">Users</button>
+                                <button type="button" class="btn-secondary" id="itMaintainHistoryBtn">History</button>
+                            </div>
+                        </div>
+                        <div class="it-maintain-users-list" id="itMaintainUsersList">
+                            <!-- Users will be loaded here -->
+                        </div>
+                        <div class="it-maintain-history-list" id="itMaintainHistoryList" style="display: none;">
+                            <!-- History will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-container" id="chatContainer" style="display: none;">
+                <div class="chat-header">
+                    <div class="chat-contact-info">
+                        <div class="contact-avatar" id="contactAvatar"></div>
+                        <div class="contact-details">
+                            <h3 id="contactName">Contact Name</h3>
+                            <p id="contactStatus">Online</p>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="icon-btn" id="chatMenuBtn" title="Chat options">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <div class="chat-menu-dropdown" id="chatMenuDropdown" style="display: none;">
+                            <div class="chat-menu-item" id="clearChatBtn">
+                                <i class="fas fa-trash"></i> Clear chat
+                            </div>
+                            <div class="chat-menu-item" id="selectMessagesBtn">
+                                <i class="fas fa-check-square"></i> Select messages
+                            </div>
+                        </div>
+                        <div class="in-chat-search" id="inChatSearch" style="display: none;">
+                            <input type="text" id="inChatSearchInput" placeholder="Search in this chat...">
+                        </div>
+                        <button class="icon-btn" id="searchInChatBtn" title="Search in chat">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <button class="icon-btn" id="helpdeskWorkStatusBtn" title="IT Work Status" style="display: none;">
+                            <i class="fas fa-users-gear"></i>
+                        </button>
+                        <button class="icon-btn" id="groupInfoBtn" title="Group Info" style="display: none;">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="messages-container" id="messagesContainer">
+                    <!-- Messages will be loaded here -->
+                </div>
+
+                <!-- Help Desk Container Display -->
+                <div class="helpdesk-containers" id="helpdeskContainers" style="display: none;">
+                    <div class="helpdesk-header">
+                        <h3>IT Helpdesk Requests</h3>
+                        <div class="helpdesk-filter-buttons">
+                            <button type="button" class="status-filter-btn" data-status="pending" onclick="setHelpdeskFilter('pending')">Pending</button>
+                            <button type="button" class="status-filter-btn it-only" data-status="my_took_over" onclick="setHelpdeskFilter('my_took_over')">Took Over By Me</button>
+                            <button type="button" class="status-filter-btn it-only" data-status="my_completed" onclick="setHelpdeskFilter('my_completed')">Completed By Me</button>
+                            <button type="button" class="status-filter-btn" data-status="all_took_over" onclick="setHelpdeskFilter('all_took_over')">All Took Over</button>
+                            <button type="button" class="status-filter-btn" data-status="all_completed" onclick="setHelpdeskFilter('all_completed')">All Completed</button>
+                        </div>
+                        <div class="helpdesk-date-filter">
+                            <label for="helpdeskFromDate">From:</label>
+                            <input type="date" id="helpdeskFromDate" onchange="filterHelpdeskByDate()">
+                            <label for="helpdeskToDate">To:</label>
+                            <input type="date" id="helpdeskToDate" onchange="filterHelpdeskByDate()">
+                        </div>
+                        <button class="btn btn-primary" id="raiseRequestBtn">Raise a Request</button>
+                    </div>
+                    <div class="containers-list" id="containersList">
+                        <!-- Help desk containers will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="selection-action-bar" id="selectionActionBar">
+                    <span class="selection-count" id="selectionCount">0 selected</span>
+                    <div class="selection-actions">
+                        <button class="btn-delete-selected" id="deleteSelectedBtn">Delete</button>
+                        <button class="btn-cancel-selection" id="cancelSelectionBtn">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                    <span id="typingText">Someone is typing...</span>
+                </div>
+
+                <div class="message-input-area" id="messageInputArea">
+                    <button class="icon-btn" id="attachBtn" title="Attach file">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <input type="file" id="fileInput" style="display: none;">
+                    
+                    <div class="message-input-wrapper" style="position: relative;">
+                        <input type="text" id="messageInput" placeholder="Type a message...">
+                        <button class="icon-btn" id="emojiBtn" title="Emoji">
+                            <i class="fas fa-smile"></i>
+                        </button>
+                        
+                        <!-- Emoji Picker -->
+                        <div class="emoji-picker" id="emojiPicker" style="display: none;">
+                            <div class="emoji-grid">
+                                <span class="emoji">😀</span>
+                                <span class="emoji">😂</span>
+                                <span class="emoji">😍</span>
+                                <span class="emoji">🥰</span>
+                                <span class="emoji">😎</span>
+                                <span class="emoji">🤔</span>
+                                <span class="emoji">😢</span>
+                                <span class="emoji">😡</span>
+                                <span class="emoji">👍</span>
+                                <span class="emoji">👎</span>
+                                <span class="emoji">❤️</span>
+                                <span class="emoji">🔥</span>
+                                <span class="emoji">🎉</span>
+                                <span class="emoji">✨</span>
+                                <span class="emoji">💯</span>
+                                <span class="emoji">🙏</span>
+                                <span class="emoji">👋</span>
+                                <span class="emoji">🤝</span>
+                                <span class="emoji">💪</span>
+                                <span class="emoji">🎯</span>
+                                <span class="emoji">📱</span>
+                                <span class="emoji">💻</span>
+                                <span class="emoji">🎵</span>
+                                <span class="emoji">🎮</span>
+                                <span class="emoji">☕</span>
+                                <span class="emoji">🍕</span>
+                                <span class="emoji">🚀</span>
+                                <span class="emoji">⭐</span>
+                                <span class="emoji">🌟</span>
+                                <span class="emoji">💡</span>
+                                <span class="emoji">📌</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                                        
+                    <button class="send-btn" id="sendBtn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Broadcast Modal -->
+    <div class="modal" id="broadcastModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Send to All</h2>
+                <button class="close-btn" id="closeBroadcastModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="broadcastMessage" placeholder="Type your message here..." class="form-control" rows="4"></textarea>
+                <div class="form-group">
+                    <label>Attach File (Optional):</label>
+                    <input type="file" id="broadcastFile" class="form-control">
+                    <div id="broadcastFilePreview" class="file-preview" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelBroadcast">Cancel</button>
+                <button class="btn btn-primary" id="sendBroadcastBtn">Send to All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Group Modal -->
+    <div class="modal" id="newGroupModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Group</h2>
+                <button class="close-btn" id="closeNewGroupModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Group Name</label>
+                    <input type="text" id="groupName" placeholder="Enter group name">
+                </div>
+                <div class="form-group">
+                    <label>Description (optional)</label>
+                    <input type="text" id="groupDescription" placeholder="Enter group description">
+                </div>
+                <div class="form-group">
+                    <label>Add Members</label>
+                    <input type="text" id="groupMemberSearch" placeholder="Search users to add">
+                </div>
+                <div class="selected-members" id="selectedMembers">
+                    <!-- Selected members will be shown here -->
+                </div>
+                <div class="users-list" id="groupUsersList">
+                    <!-- Users will be loaded here -->
+                </div>
+                <button class="btn-primary" id="createGroupBtn">Create Group</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Info Modal -->
+    <div class="modal" id="groupInfoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Group Info</h2>
+                <button class="close-btn" id="closeGroupInfoModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="group-details" id="groupDetails">
+                    <!-- Group details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Context Menu -->
+    <div class="context-menu" id="contextMenu" style="display: none;">
+        <div class="context-menu-item" id="replyBtn">
+            <i class="fas fa-reply"></i> Reply
+        </div>
+        <div class="context-menu-item" id="editBtn">
+            <i class="fas fa-edit"></i> Edit
+        </div>
+        <div class="context-menu-item" id="deleteForMeBtn">
+            <i class="fas fa-trash"></i> Delete for me
+        </div>
+        <div class="context-menu-item" id="deleteForAllBtn">
+            <i class="fas fa-trash-alt"></i> Delete for everyone
+        </div>
+    </div>
+
+    <!-- Beautiful Notification System -->
+    <div class="notification-overlay" id="notificationOverlay" style="display: none;">
+        <div class="notification-box" id="notificationBox">
+            <div class="notification-icon" id="notificationIcon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="notification-content">
+                <h3 id="notificationTitle">Notification</h3>
+                <p id="notificationMessage">Message content</p>
+            </div>
+            <div class="notification-actions">
+                <button class="notification-btn primary" id="notificationConfirm">OK</button>
+                <button class="notification-btn secondary" id="notificationCancel" style="display: none;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Members Modal -->
+    <div class="modal" id="addMembersModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Members</h2>
+                <button class="close-btn" id="closeAddMembersModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="addMembersContent">
+                    <!-- Add members content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Viewer Modal -->
+    <div class="modal" id="fileViewerModal">
+        <div class="file-viewer-content">
+            <button class="file-viewer-close" id="closeFileViewerModal">&times;</button>
+            <div class="file-viewer-body">
+                <div id="fileViewerContainer">
+                    <!-- File content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast (for small notifications) -->
+    <div class="notification-toast" id="notificationToast" style="display: none;">
+        <div class="toast-content">
+            <img src="" alt="Sender" class="toast-pic" id="toastPic">
+            <div class="toast-text">
+                <h4 id="toastTitle">New Message</h4>
+                <p id="toastBody">Message content</p>
+            </div>
+        </div>
+        <button class="toast-close" id="toastClose">&times;</button>
+    </div>
+
+    <!-- Help Desk Request Modal -->
+    <div class="modal" id="helpdeskRequestModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Raise a Help Desk Request</h2>
+                <button class="close-btn" id="closeHelpdeskRequestModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="problemDescription">Problem Description *</label>
+                    <textarea id="problemDescription" placeholder="Describe your problem in detail..." rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="attachedFile">Attach File (Optional)</label>
+                    <input type="file" id="attachedFile" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt">
+                    <div id="filePreview" class="file-preview" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelHelpdeskRequest">Cancel</button>
+                <button class="btn btn-primary" id="submitHelpdeskRequest">Submit Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed Problem Modal (used for completing helpdesk tasks) -->
+    <div class="modal" id="fixedProblemModal" style="display: none;">
+        <div class="modal-content fixed-problem-modal-content" style="max-width: 760px;">
+            <div class="modal-header">
+                <h2>Complete Task</h2>
+                <button class="close-btn" id="fixedProblemClose" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="fixedProblemText">What did you fix? *</label>
+                    <textarea id="fixedProblemText" placeholder="Enter fixed problem details..." rows="7"></textarea>
+                    <div id="fixedProblemError" style="display:none; color:#ef4444; font-size:12px; margin-top:8px;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="fixedProblemCancel" type="button">Cancel</button>
+                <button class="btn btn-primary" id="fixedProblemSubmit" type="button">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global IT Work Status Modal (helpdesk group header action) -->
+    <div class="modal" id="helpdeskWorkStatusModal" style="display: none;">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h2>IT Team Status</h2>
+                <button class="close-btn" id="helpdeskWorkStatusClose" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="helpdeskWorkStatusBody" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal" id="changePasswordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Change Password</h2>
+                <button class="close-btn" onclick="closeChangePasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

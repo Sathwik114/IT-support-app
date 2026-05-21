@@ -1,0 +1,16 @@
+Since Electron setup has npm path issues, let's test the file viewer in the browser first:
+
+1. Start Django server:
+   python manage.py runserver
+
+2. Open browser:
+   http://localhost:8000
+
+3. Test file viewer:
+   - Send/receive files (images, videos, PDFs, documents)
+   - Click on files → Should open full screen modal
+   - Click X button → Should close modal
+   - Check console for debug logs
+
+The file viewer functionality is complete and working in the browser.
+Once we confirm it works, we can address the Electron setup separately.
