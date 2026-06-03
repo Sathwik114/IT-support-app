@@ -4,6 +4,9 @@ let currentConversation = null;
 let websocket = null;
 let notificationSocket = null;
 let notificationSocketConnected = false;
+let notificationPollingTimer = null;
+let lastNotificationId = Number(localStorage.getItem('lastNotificationId') || 0);
+let notificationPollingActive = false;
 let selectedMembers = [];
 let typingTimeout = null;
 let itMaintainUsers = [];
@@ -1101,7 +1104,7 @@ async function openConversation(conversationId) {
 
             // Load help desk containers if this is IT help desk group
             if (currentConversation.is_help_desk) {
-                loadHelpDeskContainers();
+                await loadHelpDeskContainers();
 
                 // Show global work-status button in header for helpdesk group
                 const helpdeskWorkStatusBtn = document.getElementById('helpdeskWorkStatusBtn');
@@ -2178,12 +2181,127 @@ let wsConnectionAttempts = 0;
 const MAX_CONNECTION_ATTEMPTS = 5;
 const RETRY_DELAY = 10000; // 10 seconds
 
+function handleNotificationPayload(notification, options = {}) {
+    if (!notification) return;
+
+    const notificationId = Number(notification.id || 0);
+    if (notificationId > lastNotificationId) {
+        lastNotificationId = notificationId;
+        localStorage.setItem('lastNotificationId', String(lastNotificationId));
+    }
+
+    if (notification.notification_type === 'it_membership_changed') {
+        currentUser = {
+            ...currentUser,
+            is_it_member: !!notification.is_it_member
+        };
+        localStorage.setItem('user', JSON.stringify(currentUser));
+        updateUserMenuVisibility();
+        refreshCurrentUserProfile();
+        loadConversations();
+    }
+
+    if (notification.notification_type === 'new_message') {
+        loadConversations();
+        if (
+            currentConversation &&
+            Number(currentConversation.id) === Number(notification.conversation_id)
+        ) {
+            loadMessages(currentConversation.id);
+            markMessagesAsRead(currentConversation.id);
+        }
+    }
+
+    if (options.showToast !== false) {
+        showNotificationToast(notification);
+    }
+}
+
+window.addEventListener('message', (event) => {
+    const data = event.data || {};
+    if (data.type === 'desktop-notification-click') {
+        handleNotificationClick(data.notification);
+    }
+});
+
+async function handleNotificationClick(notification) {
+    if (!notification) return;
+
+    hideNotificationToast();
+    try {
+        window.focus();
+    } catch (_) {}
+
+    const conversationId = Number(notification.conversation_id || 0);
+    const taskId = Number(notification.task_id || 0);
+
+    if (conversationId) {
+        await openConversation(conversationId);
+    }
+
+    if (taskId) {
+        const panel = await waitForTaskChatPanel(taskId);
+        if (panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            toggleTaskChat(taskId, true);
+        }
+    }
+}
+
+function waitForTaskChatPanel(taskId, attempts = 20) {
+    return new Promise(resolve => {
+        const findPanel = remaining => {
+            const panel = document.getElementById(`taskChatPanel_${taskId}`);
+            if (panel || remaining <= 0) {
+                resolve(panel);
+                return;
+            }
+            setTimeout(() => findPanel(remaining - 1), 100);
+        };
+        findPanel(attempts);
+    });
+}
+
+function startNotificationPolling() {
+    if (notificationPollingActive) return;
+    notificationPollingActive = true;
+    pollNotifications();
+    notificationPollingTimer = setInterval(pollNotifications, 15000);
+}
+
+function stopNotificationPolling() {
+    notificationPollingActive = false;
+    if (notificationPollingTimer) {
+        clearInterval(notificationPollingTimer);
+        notificationPollingTimer = null;
+    }
+}
+
+async function pollNotifications() {
+    try {
+        const response = await fetch(`/api/notifications/?since_id=${lastNotificationId}`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const notifications = data.notifications || [];
+        if (lastNotificationId === 0 && notifications.length > 0) {
+            lastNotificationId = Math.max(...notifications.map(notification => Number(notification.id || 0)));
+            localStorage.setItem('lastNotificationId', String(lastNotificationId));
+            return;
+        }
+        notifications.forEach(notification => handleNotificationPayload(notification));
+    } catch (error) {
+        console.debug('Notification polling failed', error);
+    }
+}
+
 // Connect to notification socket
 function connectNotificationSocket() {
     // Prevent infinite retry loop
     if (wsConnectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
         console.error('Max WebSocket connection attempts reached. Stopping retries.');
-        console.log('WebSocket functionality will be disabled for this session.');
+        console.log('Using HTTP notification polling for this session.');
+        startNotificationPolling();
         return;
     }
 
@@ -2200,23 +2318,14 @@ function connectNotificationSocket() {
         notificationSocket.onopen = () => {
             console.log('WebSocket connected successfully');
             notificationSocketConnected = true;
+            stopNotificationPolling();
             wsConnectionAttempts = 0; // Reset attempts on successful connection
         };
 
         notificationSocket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === 'notification') {
-                if (data.notification && data.notification.notification_type === 'it_membership_changed') {
-                    currentUser = {
-                        ...currentUser,
-                        is_it_member: !!data.notification.is_it_member
-                    };
-                    localStorage.setItem('user', JSON.stringify(currentUser));
-                    updateUserMenuVisibility();
-                    refreshCurrentUserProfile();
-                    loadConversations();
-                }
-                showNotificationToast(data.notification);
+                handleNotificationPayload(data.notification);
             } else if (data.type === 'task_chat_unread') {
                 const taskId = Number(data.task_id);
                 const count = Number(data.unread_count || 0);
@@ -2232,7 +2341,9 @@ function connectNotificationSocket() {
                     if (!isOpen && count > previousCount) {
                         showNotificationToast({
                             title: 'New Task Chat Message',
-                            body: `Task #${taskId} has unread messages.`
+                            body: `Task #${taskId} has unread messages.`,
+                            conversation_id: currentConversation ? currentConversation.id : null,
+                            task_id: taskId
                         });
                     }
                 }
@@ -2250,7 +2361,8 @@ function connectNotificationSocket() {
             console.log('WebSocket server may not be running. Check server status.');
             notificationSocketConnected = false;
             if (wsConnectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
-                showToast('Notifications socket failed to connect. Please reload the page.', 'warning');
+                showToast('Realtime socket unavailable. Notifications will refresh automatically.', 'warning');
+                startNotificationPolling();
             }
             // Only retry if not max attempts reached
             if (wsConnectionAttempts < MAX_CONNECTION_ATTEMPTS) {
@@ -2264,14 +2376,18 @@ function connectNotificationSocket() {
             // Only retry if not max attempts reached
             if (wsConnectionAttempts < MAX_CONNECTION_ATTEMPTS) {
                 setTimeout(connectNotificationSocket, RETRY_DELAY);
+            } else {
+                startNotificationPolling();
             }
         };
     } catch (error) {
         console.error('Failed to create WebSocket:', error);
-        console.log('WebSocket functionality will be disabled for this session.');
+        console.log('Using HTTP notification polling for this session.');
         // Only retry if not max attempts reached
         if (wsConnectionAttempts < MAX_CONNECTION_ATTEMPTS) {
             setTimeout(connectNotificationSocket, RETRY_DELAY);
+        } else {
+            startNotificationPolling();
         }
     }
 }
@@ -2300,7 +2416,8 @@ function handleNewMessage(message) {
 
         showNotificationToast({
             title: senderName,
-            body: messagePreview + (message.content && message.content.length > 50 ? '...' : '')
+            body: messagePreview + (message.content && message.content.length > 50 ? '...' : ''),
+            conversation_id: message.conversation_id
         });
     }
 }
@@ -3202,11 +3319,12 @@ function showNotificationToast(notification) {
         toastTitle.textContent = title;
         toastBody.textContent = body;
         toast.style.display = 'flex';
+        toast.onclick = () => handleNotificationClick(notification);
 
         setTimeout(hideNotificationToast, 5000);
     }
 
-    sendSystemNotification(title, body);
+    sendSystemNotification(title, body, notification);
     playNotificationSound();
 }
 
@@ -3235,8 +3353,8 @@ function requestNotificationPermission() {
     document.addEventListener('keydown', askPermission, { once: true });
 }
 
-function sendSystemNotification(title, body) {
-    if (sendDesktopNotification(title, body)) {
+function sendSystemNotification(title, body, notification = {}) {
+    if (sendDesktopNotification(title, body, notification)) {
         return;
     }
 
@@ -3244,14 +3362,18 @@ function sendSystemNotification(title, body) {
         return;
     }
 
-    new Notification(title || 'Notification', {
+    const systemNotification = new Notification(title || 'Notification', {
         body: body || '',
         icon: '/static/img/logo.png',
         badge: '/static/img/logo.png'
     });
+    systemNotification.onclick = () => {
+        handleNotificationClick(notification);
+        systemNotification.close();
+    };
 }
 
-function sendDesktopNotification(title, body) {
+function sendDesktopNotification(title, body, notification = {}) {
     if (!isElectronApp()) {
         return false;
     }
@@ -3260,7 +3382,8 @@ function sendDesktopNotification(title, body) {
         window.postMessage({
             type: 'desktop-notification',
             title: title || 'Notification',
-            body: body || ''
+            body: body || '',
+            notification
         }, '*');
         return true;
     }
@@ -3383,10 +3506,10 @@ function debounce(func, wait) {
 // Help Desk Container Functions
 function loadHelpDeskContainers() {
     if (!currentConversation || !currentConversation.is_help_desk) {
-        return;
+        return Promise.resolve();
     }
 
-    fetch('/api/messaging/helpdesk/containers/', {
+    return fetch('/api/messaging/helpdesk/containers/', {
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -4209,7 +4332,9 @@ function onTaskChatMessage(taskId, msg) {
         // Show a toast/notification for IT helpdesk
         showNotificationToast({
             title: 'Task Chat',
-            body: `Task #${taskId} has a new message.`
+            body: `Task #${taskId} has a new message.`,
+            conversation_id: currentConversation ? currentConversation.id : null,
+            task_id: taskId
         });
         return;
     }

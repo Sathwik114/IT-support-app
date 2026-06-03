@@ -9,3 +9,5 @@ psycopg2-binary==2.9.9
 mssql-django==1.7.1
 pyodbc==5.0.1
 pytz==2026.2
+waitress==3.0.2
+whitenoise==6.9.0

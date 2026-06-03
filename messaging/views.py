@@ -25,6 +25,7 @@ import json
 import os
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from notifications.models import Notification
 
 def is_it_member_user(user):
     return user_has_it_role(user)
@@ -54,8 +55,11 @@ def can_send_task_chat(user, task):
 
 def get_task_chat_unread_count(user, task):
     """Unread messages for user in a task chat (excluding user's own messages)."""
-    if not can_send_task_chat(user, task):
-        # Other IT members can view chat but should not receive unread counts.
+    can_receive_task_chat_notifications = (
+        can_send_task_chat(user, task) or
+        (is_it_member_user(user) and task.conversation.participants.filter(id=user.id).exists())
+    )
+    if not can_receive_task_chat_notifications:
         return 0
     try:
         state = TaskChatReadState.objects.filter(task=task, user=user).only('last_read_at').first()
@@ -142,6 +146,40 @@ def task_chat_message_to_dict(message, user):
         'timestamp': message.timestamp.isoformat(),
         'is_self': message.sender_id == user.id,
     }
+
+
+def push_message_notifications(message):
+    """Create and send realtime notifications for REST-created chat messages."""
+    channel_layer = get_channel_layer()
+    conversation = message.conversation
+    recipients = conversation.participants.exclude(id=message.sender_id)
+
+    for recipient in recipients:
+        notification = Notification.objects.create(
+            recipient=recipient,
+            message=message,
+            conversation=conversation,
+            notification_type='new_message'
+        )
+
+        if not channel_layer:
+            continue
+
+        async_to_sync(channel_layer.group_send)(
+            f'notifications_{recipient.id}',
+            {
+                'type': 'notification',
+                'notification': {
+                    'id': notification.id,
+                    'notification_type': notification.notification_type,
+                    'title': notification.title,
+                    'body': notification.body,
+                    'conversation_id': conversation.id,
+                    'message_id': message.id,
+                    'created_at': notification.created_at.isoformat(),
+                }
+            }
+        )
 
 
 @login_required
@@ -594,6 +632,7 @@ def send_message(request):
         
         # Update conversation timestamp
         conversation.save()
+        push_message_notifications(message)
         
         return JsonResponse({
             'success': True,
@@ -794,6 +833,8 @@ def upload_media(request):
             was_compressed=processed_upload['was_compressed'],
             status='sent'
         )
+        conversation.save()
+        push_message_notifications(message)
         
         return JsonResponse({
             'success': True,

@@ -58,10 +58,17 @@ ipcRenderer.on('desktop:auth-state', () => {
     persistExistingAuthState();
 });
 
+ipcRenderer.on('desktop:notification-click', (event, payload) => {
+    window.postMessage({
+        type: 'desktop-notification-click',
+        notification: payload || {}
+    }, '*');
+});
+
 window.addEventListener('message', (event) => {
     const data = event.data || {};
     if (data.type === 'desktop-notification') {
-        ipcRenderer.send('notification:show', data.title, data.body);
+        ipcRenderer.send('notification:show', data.title, data.body, data.notification || {});
     }
 
     if (data.type === 'desktop-auth-set') {

@@ -3,12 +3,16 @@ const Store = require('electron-store');
 const path = require('path');
 const fs = require('fs');
 
-const APP_URL = 'http://10.40.20.4:8001';
+const APP_URL = 'http://10.40.10.125:8001';
 const APP_ORIGIN = new URL(APP_URL).origin;
 const APP_NAME = 'IT Support';
 const SESSION_PARTITION = 'persist:it-support';
 const AUTH_STORE_KEY = 'authState';
 const AUTH_STORAGE_KEYS = ['user', 'token'];
+const OUR_SITES = [
+    { label: 'GTI Central Portal', url: 'http://10.40.10.105/' },
+    { label: 'IT Central Portal', url: 'http://10.40.10.125/itweb/' }
+];
 
 const store = new Store({
     name: 'desktop-state',
@@ -21,6 +25,7 @@ const store = new Store({
 let mainWindow;
 let tray = null;
 let isQuitting = false;
+const siteWindows = new Set();
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -65,6 +70,27 @@ function hideToTray() {
 function exitApp() {
     isQuitting = true;
     app.quit();
+}
+
+function openSiteWindow(url, title) {
+    const siteWindow = new BrowserWindow({
+        width: 1200,
+        height: 800,
+        minWidth: 800,
+        minHeight: 600,
+        show: false,
+        title,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            webSecurity: true
+        }
+    });
+
+    siteWindows.add(siteWindow);
+    siteWindow.on('closed', () => siteWindows.delete(siteWindow));
+    siteWindow.once('ready-to-show', () => siteWindow.show());
+    siteWindow.loadURL(url);
 }
 
 function createTray() {
@@ -157,6 +183,13 @@ function createAppMenu() {
                     click: () => mainWindow?.webContents.setZoomLevel(0)
                 }
             ]
+        },
+        {
+            label: 'Our sites',
+            submenu: OUR_SITES.map(site => ({
+                label: site.label,
+                click: () => openSiteWindow(site.url, site.label)
+            }))
         },
         {
             label: 'Help',
@@ -278,14 +311,20 @@ function setupIpc() {
         store.set(AUTH_STORE_KEY, {});
     });
 
-    ipcMain.on('notification:show', (event, title, body) => {
+    ipcMain.on('notification:show', (event, title, body, payload = {}) => {
         if (!Notification.isSupported()) return;
 
-        new Notification({
+        const notification = new Notification({
             title: title || APP_NAME,
             body: body || '',
             icon: path.join(__dirname, 'it_support.png')
-        }).show();
+        });
+
+        notification.on('click', () => {
+            showMainWindow();
+            mainWindow?.webContents.send('desktop:notification-click', payload);
+        });
+        notification.show();
     });
 }
 

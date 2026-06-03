@@ -37,6 +37,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -75,13 +76,13 @@ ASGI_APPLICATION = 'chat_system.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'ITSupport',
-        'USER': 'sa',
-        'PASSWORD': 'sqlsa@2012',
-        'HOST': 'PC2004',
-        'PORT': '1433',
+        'NAME': os.environ.get('DB_NAME', 'ITSupport'),
+        'USER': os.environ.get('DB_USER', 'sa'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'ccise054879+m'),
+        'HOST': os.environ.get('DB_HOST', '10.40.10.125'),
+        'PORT': os.environ.get('DB_PORT', '1433'),
         'OPTIONS': {
-            'driver': 'SQL Server Native Client 11.0',
+            'driver': os.environ.get('DB_DRIVER', 'SQL Server Native Client 11.0'),
         },
     },
 
@@ -125,6 +126,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
